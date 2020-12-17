@@ -135,7 +135,7 @@ Inference time was measured with PyTorch 1.7 and CUDA 10.2 on RTX 2080 laptop,
 and PyTorch 1.6 and L4T 4.4 on Jetson AGX Xavier.
 
 ## Citation
-If you use DR-SPAAM in your project, please cite:
+If you use this repo in your project, please cite:
 ```BibTeX
 @article{Jia2020Person2DRange,
   title        = {{Self-Supervised Person Detection in 2D Range Data using a
