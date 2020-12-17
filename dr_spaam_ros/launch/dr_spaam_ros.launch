@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="dr_spaam_ros" type="node.py" name="dr_spaam_ros" output="screen">
+    <rosparam command="load" file="$(find dr_spaam_ros)/config/dr_spaam_ros.yaml"/>
+    <rosparam command="load" file="$(find dr_spaam_ros)/config/topics.yaml"/>
+  </node>
+</launch>

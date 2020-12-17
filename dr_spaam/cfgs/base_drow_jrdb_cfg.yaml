@@ -1,0 +1,88 @@
+# This file is intended as a config template for generate_experiments.py
+# Modify with caution
+
+model:
+    type: "drow"
+    kwargs:
+        dropout: 0.5
+        # focal_loss_gamma: 0.0
+
+    # type: "dr-spaam"
+    # kwargs:
+    #     dropout: 0.5
+    #     num_pts: 56
+    #     embedding_length: 128
+    #     alpha: 0.5
+    #     window_size: 11
+    #     panoramic_scan: True
+    #     # focal_loss_gamma: 0.0
+
+    # for coping with noisy pseudo labels
+    cls_loss:
+        type: 0  # 0 BCE, 1 SymmetricBCE, 2 PartiallyHuberisedBCE
+
+        # # SymmetricBCE
+        # kwargs:
+        #     alpha: 0.1
+        #     beta: 1.0
+
+        # # PartiallyHuberisedBCE
+        # kwargs: 
+        #     tau: 3.0
+
+    mixup_alpha: 0.0
+    mixup_w: 0.0
+    self_paced: False
+
+dataset:
+    augment_data: False
+    person_only: True
+    pseudo_label: False  # only matters for JRDB
+    # For ablation study, remove the wrong label from pseudo labels.
+    # 0 no correction, 1 remove false positives, 2 remove false negatives, 3 both.
+    pl_correction_level: 0  
+
+    DataHandle:
+        data_dir: "./data/JRDB"  # ./data/JRDB or ./data/DROWv2-data
+        num_scans: 1
+        scan_stride: 1
+        tracking: False
+
+    # DataHandle:
+    #     data_dir: "./data/DROWv2-data"  # ./data/JRDB or ./data/DROWv2-data
+    #     num_scans: 1
+    #     scan_stride: 1
+
+    cutout_kwargs:
+        fixed: True
+        centered: True
+        window_width: 1.0
+        window_depth: 0.5
+        num_cutout_pts: 56
+        padding_val: 29.99
+        area_mode: True
+
+dataloader:
+    batch_size: 8
+    num_workers: 8
+
+pipeline:
+    Trainer:
+        grad_norm_clip: -1.0
+        ckpt_interval: 4
+        eval_interval: 4
+        epoch: 40
+
+    Optim:
+        scheduler_kwargs:
+            epoch0: 10
+            epoch1: 40
+            lr0: 1.e-3
+            lr1: 1.e-6
+
+    Logger:
+        log_dir: "./logs/"
+        tag: "drow_jrdb"
+        log_fname: "log.txt"
+        backup_list: []
+
