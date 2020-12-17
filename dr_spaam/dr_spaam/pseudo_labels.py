@@ -1,4 +1,4 @@
-from dr_spaam.dataset.src.jrdb_dataset import _get_regression_target_from_pseudo_labels
+from dr_spaam.dataset.jrdb_dataset import _get_regression_target_from_pseudo_labels
 from dr_spaam.utils import utils as u
 
 
