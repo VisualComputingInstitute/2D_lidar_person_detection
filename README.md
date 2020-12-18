@@ -112,7 +112,7 @@ where `net_cfg.yaml` specifies configuration for the training (see examples unde
 
 If your robot has a calibrated camera (i.e. the transformation between the camera to the LiDAR is known),
 you can generate pseudo labels automatically during deployment and fine-tune the detector (no manual labeling needed).
-We provide a wrapper function `dr_spaam.detector.get_regression_target_using_bounding_boxes()` for generating pseudo labels conveniently.
+We provide a wrapper function `dr_spaam.pseudo_labels.get_regression_target_using_bounding_boxes()` for generating pseudo labels conveniently.
 For experiments using pseudo labels,
 checkout our paper *Self-Supervised Person Detection in 2D Range Data using a Calibrated Camera* [(arXiv)](https://arxiv.org/abs/2012.08890).
 Use checkpoints in this [Google drive](https://drive.google.com/drive/folders/1Wl2nC8lJ6s9NI1xtWwmxeAUnuxDiiM4W?usp=sharing) to reproduce our results.
