@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import numpy as np
 
 import torch
@@ -204,12 +206,12 @@ def _model_eval_fn(model, batch_dict):
         dets_xy, dets_cls, _ = u.nms_predicted_center(
             scans[ib][-1], scan_phi[ib], pred_cls[ib], pred_reg[ib]
         )
-        frame_id = f"{batch_dict['frame_id'][ib]:06d}"
+        frame_id = "%06d" % batch_dict['frame_id'][ib]
         sequence = batch_dict["sequence"][ib]
 
         # save detection results for evaluation
         det_str = pru.drow_detection_to_kitti_string(dets_xy, dets_cls, None)
-        file_dict[f"detections/{sequence}/{frame_id}"] = det_str
+        file_dict["detections/" + str(sequence) + "/" + str(frame_id)] = det_str
 
         # save corresponding groundtruth for evaluation
         anns_rphi = batch_dict["dets_wp"][ib]
@@ -220,16 +222,16 @@ def _model_eval_fn(model, batch_dict):
                 np.int
             )
             gts_str = pru.drow_detection_to_kitti_string(gts_xy, None, gts_occluded)
-            file_dict[f"groundtruth/{sequence}/{frame_id}"] = gts_str
+            file_dict["groundtruth/{}/{}".format(sequence, frame_id)] = gts_str
         else:
-            file_dict[f"groundtruth/{sequence}/{frame_id}"] = ""
+            file_dict["groundtruth/{}/{}".format(sequence, frame_id)] = ""
 
         # TODO When to plot
         if _PLOTTING:
             fig, ax = plot_one_frame(
                 batch_dict, ib, pred_cls[ib], pred_reg[ib], dets_cls, dets_xy
             )
-            fig_dict[f"figs/{sequence}/{frame_id}"] = (fig, ax)
+            fig_dict["figs/{}/{}".format(sequence, frame_id)] = (fig, ax)
 
     return tb_dict, file_dict, fig_dict
 
@@ -244,23 +246,28 @@ def _model_eval_collate_fn(tb_dict_list, result_dir):
     for k, v in epoch_tb_dict.items():
         epoch_tb_dict[k] = np.array(v).mean()
 
-    sequences, sequences_results_03, sequences_results_05 = pru.evaluate_drow(
+    sequences, sequences_results_03, sequences_results_05, sequences_results_08 = pru.evaluate_drow(
         result_dir, remove_raw_files=True
     )
 
     # save evaluation output to system
     epoch_dict = {}
-    for n, re03, re05 in zip(sequences, sequences_results_03, sequences_results_05):
-        epoch_dict[f"evaluation/{n}/result_r03"] = re03
-        epoch_dict[f"evaluation/{n}/result_r05"] = re05
+    for n, re03, re05, re08 in zip(sequences, sequences_results_03, sequences_results_05, sequences_results_08):
+        epoch_dict["evaluation/" + str(n) + "/result_r03"] = re03
+        epoch_dict["evaluation/" + str(n) + "/result_r05"] = re05
+        epoch_dict["evaluation/" + str(n) + "/result_r08"] = re08
 
         # log scalar values in tensorboard
         for k, v in re03.items():
             if not isinstance(v, (np.ndarray, list, tuple)):
-                epoch_tb_dict[f"{n}_{k}_r03"] = v
+                epoch_tb_dict[str(n) + "_" + str(k) + "_r03"] = v
 
         for k, v in re05.items():
             if not isinstance(v, (np.ndarray, list, tuple)):
-                epoch_tb_dict[f"{n}_{k}_r05"] = v
+                epoch_tb_dict[str(n) + "_" + str(k) + "_r05"] = v
+        
+        for k, v in re08.items():
+            if not isinstance(v, (np.ndarray, list, tuple)):
+                epoch_tb_dict[str(n) + "_" + str(k) + "_r08"] = v
 
     return epoch_tb_dict, epoch_dict

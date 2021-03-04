@@ -1,9 +1,12 @@
-from collections import defaultdict
+from __future__ import absolute_import, print_function
+
 import glob
 import os
-import numpy as np
+from collections import defaultdict
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from sklearn.metrics import auc
@@ -33,7 +36,8 @@ def drow_detection_to_kitti_string(dets_xy, dets_cls, occluded):
 
     s = ""
     for cls, xy, occ in zip(dets_cls, dets_xy, occluded):
-        s += f"Pedestrian 0 {occ} 0 0 0 0 0 0 0 0 0 {xy[0]} {xy[1]} 0 0 {cls}\n"
+        s += "Pedestrian 0 {} 0 0 0 0 0 0 0 0 0 {} {} 0 0 {}\n".format(
+            occ, xy[0], xy[1], cls)
     s = s.strip("\n")
 
     return s
@@ -100,6 +104,7 @@ def evaluate_drow(result_dir, verbose=True, remove_raw_files=False):
     sequences = os.listdir(det_dir)
     sequences_results_03 = []
     sequences_results_05 = []
+    sequences_results_08 = []
 
     sequences_dets_xy = []
     sequences_dets_cls = []
@@ -111,7 +116,7 @@ def evaluate_drow(result_dir, verbose=True, remove_raw_files=False):
     # evaluate each sequence
     for sequence in sequences:
         if verbose:
-            print(f"Evaluating {sequence}")
+            print("Evaluating {}".format(sequence))
 
         dets_xy_accumulate = []
         dets_cls_accumulate = []
@@ -128,13 +133,14 @@ def evaluate_drow(result_dir, verbose=True, remove_raw_files=False):
 
             gt_file = det_file.replace("detections", "groundtruth")
             with open(gt_file, "r") as f:
-                gts_xy, _, gts_occluded = kitti_string_to_drow_detection(f.read())
+                gts_xy, _, gts_occluded = kitti_string_to_drow_detection(
+                    f.read())
 
             if remove_raw_files:
                 os.remove(det_file)
                 os.remove(gt_file)
 
-            # evaluate only on visiable groundtruth
+            # evaluate only on visible groundtruth
             gts_xy = gts_xy[gts_occluded == 0]
 
             if len(dets_xy) > 0:
@@ -165,15 +171,11 @@ def evaluate_drow(result_dir, verbose=True, remove_raw_files=False):
             )
         )
 
-        if verbose:
-            print(
-                f"AP_0.3 {sequences_results_03[-1]['ap']:4f} "
-                f"peak-F1_0.3 {sequences_results_03[-1]['peak_f1']:4f} "
-                f"EER_0.3 {sequences_results_03[-1]['eer']:4f}\n"
-                f"AP_0.5 {sequences_results_05[-1]['ap']:4f} "
-                f"peak-F1_0.5 {sequences_results_05[-1]['peak_f1']:4f} "
-                f"EER_0.5 {sequences_results_05[-1]['eer']:4f}\n"
+        sequences_results_08.append(
+            get_precision_recall(
+                dets_xy, dets_cls, dets_inds, gts_xy, gts_inds, association_radius=0.8,
             )
+        )
 
         # store sequence detections and groundtruth for dataset evaluation
         sequences_dets_xy.append(dets_xy)
@@ -206,17 +208,13 @@ def evaluate_drow(result_dir, verbose=True, remove_raw_files=False):
             )
         )
 
-        if verbose:
-            print(
-                f"AP_0.3 {sequences_results_03[-1]['ap']:5f} "
-                f"peak-F1_0.3 {sequences_results_03[-1]['peak_f1']:5f} "
-                f"EER_0.3 {sequences_results_03[-1]['eer']:5f}\n"
-                f"AP_0.5 {sequences_results_05[-1]['ap']:5f} "
-                f"peak-F1_0.5 {sequences_results_05[-1]['peak_f1']:5f} "
-                f"EER_0.5 {sequences_results_05[-1]['eer']:5f}"
+        sequences_results_08.append(
+            get_precision_recall(
+                dets_xy, dets_cls, dets_inds, gts_xy, gts_inds, association_radius=0.8,
             )
+        )
 
-    return sequences, sequences_results_03, sequences_results_05
+    return sequences, sequences_results_03, sequences_results_05, sequences_results_08
 
 
 def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
@@ -236,6 +234,7 @@ def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
     sequences = os.listdir(det_dir)
     sequences_results_03 = []
     sequences_results_05 = []
+    sequence_results_08 = []
 
     sequences_dets_xy = []
     sequences_dets_inds = []
@@ -246,7 +245,7 @@ def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
     # evaluate each sequence
     for sequence in sequences:
         if verbose:
-            print(f"Evaluating {sequence}")
+            print("Evaluating {}".format(sequence))
 
         dets_xy_accumulate = []
         dets_inds_accumulate = []
@@ -262,7 +261,8 @@ def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
 
             gt_file = det_file.replace("detections", "groundtruth")
             with open(gt_file, "r") as f:
-                gts_xy, _, gts_occluded = kitti_string_to_drow_detection(f.read())
+                gts_xy, _, gts_occluded = kitti_string_to_drow_detection(
+                    f.read())
 
             # evaluate only on visiable groundtruth
             gts_xy = gts_xy[gts_occluded == 0]
@@ -293,12 +293,20 @@ def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
             )
         )
 
+        sequences_results_08.append(
+            get_precision_recall_one_hot(
+                dets_xy, dets_inds, gts_xy, gts_inds, 0.8, dist_bins=dist_bins
+            )
+        )
+
         if verbose:
             print(
-                f"precision_0.3 {sequences_results_03[-1][0]:4f} "
-                f"recall_0.3 {sequences_results_03[-1][1]:4f}\n"
-                f"precision_0.5 {sequences_results_05[-1][0]:4f} "
-                f"recall_0.5 {sequences_results_05[-1][1]:4f}\n"
+                "precision_0.3 {} ".format(sequences_results_03[-1][0]),
+                "recall_0.3 {}\n".format(sequences_results_03[-1][1]),
+                "precision_0.5 {} ".format(sequences_results_05[-1][0]),
+                "recall_0.5 {}\n".format(sequences_results_05[-1][1]),
+                "precision_0.8 {} ".format(sequences_results_08[-1][0]),
+                "recall_0.8 {}\n".format(sequences_results_08[-1][1])
             )
 
         # store sequence detections and groundtruth for whole dataset evaluation
@@ -330,15 +338,23 @@ def evaluate_drow_one_hot(result_dir, dist_bins=None, verbose=True):
             )
         )
 
+        sequences_results_08.append(
+            get_precision_recall_one_hot(
+                dets_xy, dets_inds, gts_xy, gts_inds, 0.8, dist_bins=dist_bins
+            )
+        )
+
         if verbose:
             print(
-                f"precision_0.3 {sequences_results_03[-1][0]:4f} "
-                f"recall_0.3 {sequences_results_03[-1][1]:4f}\n"
-                f"precision_0.5 {sequences_results_05[-1][0]:4f} "
-                f"recall_0.5 {sequences_results_05[-1][1]:4f}"
+                "precision_0.3 {} ".format(sequences_results_03[-1][0]),
+                "recall_0.3 {}\n".format(sequences_results_03[-1][1]),
+                "precision_0.5 {} ".format(sequences_results_05[-1][0]),
+                "recall_0.5 {}\n".format(sequences_results_05[-1][1]),
+                "precision_0.8 {} ".format(sequences_results_08[-1][0]),
+                "recall_0.8 {}\n".format(sequences_results_08[-1][1])
             )
 
-    return sequences, sequences_results_03, sequences_results_05
+    return sequences, sequences_results_03, sequences_results_05, sequences_results_08
 
 
 def get_precision_recall(
@@ -360,7 +376,8 @@ def get_precision_recall(
 
 
 def plot_pr_curve(precisions, recalls, plot_title=None, output_file=None):
-    fig, ax = _plot_prec_rec_wps_only(wps=(recalls, precisions), title=plot_title)
+    fig, ax = _plot_prec_rec_wps_only(
+        wps=(recalls, precisions), title=plot_title)
 
     if output_file is not None:
         plt.savefig(output_file, bbox_inches="tight")
@@ -390,16 +407,20 @@ def get_precision_recall_one_hot(
 
         if len(dets_xy_i) == 0:
             if len(gts_xy_i) > 0 and dist_bins is not None:
-                gt_hist = _increment_dist_hist_count(dist_bins, gts_xy_i, gt_hist)
+                gt_hist = _increment_dist_hist_count(
+                    dist_bins, gts_xy_i, gt_hist)
             continue
 
         if len(gts_xy_i) == 0:
             fp += len(dets_xy_i)
             if dist_bins is not None:
-                fp_hist = _increment_dist_hist_count(dist_bins, dets_xy_i, fp_hist)
+                fp_hist = _increment_dist_hist_count(
+                    dist_bins, dets_xy_i, fp_hist)
         else:
-            x_diff = dets_xy_i[:, 0].reshape(-1, 1) - gts_xy_i[:, 0].reshape(1, -1)
-            y_diff = dets_xy_i[:, 1].reshape(-1, 1) - gts_xy_i[:, 1].reshape(1, -1)
+            x_diff = dets_xy_i[:,
+                               0].reshape(-1, 1) - gts_xy_i[:, 0].reshape(1, -1)
+            y_diff = dets_xy_i[:,
+                               1].reshape(-1, 1) - gts_xy_i[:, 1].reshape(1, -1)
             match_found = (
                 np.sqrt(x_diff * x_diff + y_diff * y_diff) < assoc_radius
             )  # (dets, gts)
@@ -411,7 +432,8 @@ def get_precision_recall_one_hot(
 
             # distance distribution
             if dist_bins is not None:
-                gt_hist = _increment_dist_hist_count(dist_bins, gts_xy_i, gt_hist)
+                gt_hist = _increment_dist_hist_count(
+                    dist_bins, gts_xy_i, gt_hist)
                 tp_hist = _increment_dist_hist_count(
                     dist_bins, dets_xy_i[tp_mask], tp_hist
                 )
@@ -430,7 +452,8 @@ def get_precision_recall_one_hot(
 
 def _increment_dist_hist_count(dist_bins, pts_xy, hist_count):
     dist = np.hypot(pts_xy[:, 0], pts_xy[:, 1])
-    bins_inds = np.abs(dist.reshape(-1, 1) - dist_bins.reshape(1, -1)).argmin(axis=1)
+    bins_inds = np.abs(dist.reshape(-1, 1) -
+                       dist_bins.reshape(1, -1)).argmin(axis=1)
     np.add.at(hist_count, bins_inds, 1)
 
     return hist_count
@@ -472,7 +495,8 @@ def _prec_rec_2d(det_scores, det_coords, det_frames, gt_coords, gt_frames, gt_ra
     recs = np.full_like(det_scores, np.nan)
     threshs = np.full_like(det_scores, np.nan)
 
-    indices = np.argsort(det_scores, kind="mergesort")  # mergesort for determinism.
+    # mergesort for determinism.
+    indices = np.argsort(det_scores, kind="mergesort")
     for i, idx in enumerate(reversed(indices)):
         frame = det_frames[idx]
         iframe = np.where(frames == frame)[0][0]  # Can only be a single one.
@@ -549,28 +573,28 @@ def _plot_prec_rec(wds, wcs, was, wps, figsize=(15, 10), title=None):
         label="agn (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})".format(
             auc(*wds[:2]), _peakf1(*wds[:2]), _eer(*wds[:2])
         ),
-        c="#E24A33",
+        c="#E24A33"
     )
     ax.plot(
         *wcs[:2],
         label="wcs (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})".format(
             auc(*wcs[:2]), _peakf1(*wcs[:2]), _eer(*wcs[:2])
         ),
-        c="#348ABD",
+        c="#348ABD"
     )
     ax.plot(
         *was[:2],
         label="was (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})".format(
             auc(*was[:2]), _peakf1(*was[:2]), _eer(*was[:2])
         ),
-        c="#988ED5",
+        c="#988ED5"
     )
     ax.plot(
         *wps[:2],
         label="wps (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})".format(
             auc(*wps[:2]), _peakf1(*wps[:2]), _eer(*wps[:2])
         ),
-        c="#8EBA42",
+        c="#8EBA42"
     )
 
     if title is not None:
@@ -593,7 +617,7 @@ def _plot_prec_rec_wps_only(wps, figsize=(15, 10), title=None):
         label="wps (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})".format(
             auc(*wps[:2]), _peakf1(*wps[:2]), _eer(*wps[:2])
         ),
-        c="#8EBA42",
+        c="#8EBA42"
     )
 
     if title is not None:

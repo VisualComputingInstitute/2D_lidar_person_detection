@@ -40,10 +40,10 @@ def get_model(cfg):
         from .drow_net import DrowNet
 
         d = DrowNet(
-            **cfg["kwargs"],
             cls_loss=cls_loss,
             mixup_alpha=cfg["mixup_alpha"],
-            mixup_w=cfg["mixup_w"]
+            mixup_w=cfg["mixup_w"],
+            **cfg["kwargs"]
         )
         d.model_eval_fn = _model_eval_fn
         d.model_eval_collate_fn = _model_eval_collate_fn
@@ -58,10 +58,10 @@ def get_model(cfg):
         from .dr_spaam import DrSpaam
 
         d = DrSpaam(
-            **cfg["kwargs"],
             cls_loss=cls_loss,
             mixup_alpha=cfg["mixup_alpha"],
-            mixup_w=cfg["mixup_w"]
+            mixup_w=cfg["mixup_w"],
+            **cfg["kwargs"]
         )
         d.model_eval_fn = _model_eval_fn
         d.model_eval_collate_fn = _model_eval_collate_fn

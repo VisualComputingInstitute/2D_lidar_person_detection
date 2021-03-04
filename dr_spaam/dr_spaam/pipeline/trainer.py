@@ -69,6 +69,7 @@ class Trainer(object):
         return 0
 
     def train(self, model, train_loader, eval_loader=None):
+        print ("max epoch: ", self._max_epoch)
         for self._epoch in tqdm.trange(0, self._max_epoch, desc="epochs"):
             if self.__sigterm:
                 self._logger.save_sigterm_ckpt(
