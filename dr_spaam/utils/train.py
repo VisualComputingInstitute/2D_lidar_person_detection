@@ -71,6 +71,7 @@ if __name__ == "__main__":
 
     model = get_model(cfg["model"])
     model.cuda()
+    print (model)
 
     pipeline = Pipeline(model, cfg["pipeline"])
 
