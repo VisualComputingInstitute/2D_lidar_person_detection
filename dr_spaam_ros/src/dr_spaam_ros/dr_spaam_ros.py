@@ -1,3 +1,5 @@
+ #!/usr/bin/env python3
+
 # import time
 import numpy as np
 import rospy
@@ -69,6 +71,7 @@ class DrSpaamROS:
 
         scan = np.array(msg.ranges)
         scan[scan == 0.0] = 29.99
+        # scan[scan > 30.] = 29.99
         scan[np.isinf(scan)] = 29.99
         scan[np.isnan(scan)] = 29.99
 
@@ -147,6 +150,10 @@ def detections_to_pose_array(dets_xy, dets_cls):
         p.position.x = d_xy[0]
         p.position.y = d_xy[1]
         p.position.z = 0.0
+        p.orientation.x = 0
+        p.orientation.y = 0
+        p.orientation.z = 0
+        p.orientation.w = 1.
         pose_array.poses.append(p)
 
     return pose_array

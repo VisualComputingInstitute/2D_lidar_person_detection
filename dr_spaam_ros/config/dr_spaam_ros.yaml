@@ -1,7 +1,5 @@
-weight_file: "/home/jia/ckpts/ckpt_jrdb_ann_drow3_e40.pth"
-detector_model: "DROW3"  # DROW3 or DR-SPAAM
-# weight_file: "/home/jia/ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
-# detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
-conf_thresh: 0.5
-stride: 1  # use this to skip laser points
+weight_file: "../ckpts/best_ckpt.pth"
+detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
+conf_thresh: 0.95
+stride: 2  # use this to skip laser points
 panoramic_scan: True  # Set to true if the scan covers 360 degree
