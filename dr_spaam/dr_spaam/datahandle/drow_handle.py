@@ -118,7 +118,7 @@ class DROWHandle:
         return np.array(s1), wcs, was, wps
 
     @staticmethod
-    def get_laser_phi(angle_inc=np.radians(0.5), num_pts=450):
+    def get_laser_phi(angle_inc=0.00578, num_pts=1082):
         # Default setting of DROW, which use SICK S300 laser, with 225 deg fov
         # and 450 pts, mounted at 37cm height.
         laser_fov = (num_pts - 1) * angle_inc  # 450 points

@@ -12,8 +12,8 @@ model:
         dropout: 0.5
         num_pts: 56
         embedding_length: 128
-        alpha: 0.5
-        window_size: 17
+        alpha: 0.8
+        window_size: 12
         panoramic_scan: True
         # focal_loss_gamma: 0.0
 
@@ -43,9 +43,9 @@ dataset:
     pl_correction_level: 0  
 
     DataHandle:
-        data_dir: "./data/JRDB"  # ./data/JRDB or ./data/DROWv2-data
-        num_scans: 10
-        scan_stride: 1
+        data_dir: "./data/DROWv2-data"  # ./data/JRDB or ./data/DROWv2-data
+        num_scans: 5
+        scan_stride: 2
         tracking: False
 
     # DataHandle:
@@ -56,8 +56,8 @@ dataset:
     cutout_kwargs:
         fixed: True
         centered: True
-        window_width: 1.0
-        window_depth: 0.5
+        window_width: 1.25
+        window_depth: 0.45
         num_cutout_pts: 56
         padding_val: 29.99
         area_mode: True
@@ -77,7 +77,7 @@ pipeline:
         scheduler_kwargs:
             epoch0: 5
             epoch1: 20
-            lr0: 1.e-3
+            lr0: 1.e-5
             lr1: 1.e-6
 
     Logger:

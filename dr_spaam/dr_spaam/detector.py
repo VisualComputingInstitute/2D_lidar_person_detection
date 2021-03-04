@@ -5,6 +5,8 @@ from dr_spaam.model.drow_net import DrowNet
 from dr_spaam.model.dr_spaam import DrSpaam
 from dr_spaam.utils import utils as u
 
+import os
+
 
 class Detector(object):
     def __init__(
@@ -35,8 +37,8 @@ class Detector(object):
                 dropout=0.5,
                 num_pts=56,
                 embedding_length=128,
-                alpha=0.5,
-                window_size=17,
+                alpha=0.8,
+                window_size=12,
                 panoramic_scan=panoramic_scan,
                 cls_loss=None,
                 mixup_alpha=0.0,
@@ -49,7 +51,9 @@ class Detector(object):
                 )
             )
 
-        ckpt = torch.load(ckpt_file)
+        dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+        ckpt_file_abs = os.path.join(dir_path, ckpt_file)
+        ckpt = torch.load(ckpt_file_abs)
         self._model.load_state_dict(ckpt["model_state"])
 
         self._model.eval()
@@ -72,8 +76,8 @@ class Detector(object):
             stride=self._stride,
             centered=True,
             fixed=True,
-            window_width=1.0,
-            window_depth=0.5,
+            window_width=1.25,
+            window_depth=0.45,
             num_cutout_pts=56,
             padding_val=29.99,
             area_mode=True,

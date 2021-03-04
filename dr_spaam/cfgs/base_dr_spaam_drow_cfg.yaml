@@ -63,7 +63,7 @@ dataset:
         area_mode: True
 
 dataloader:
-    batch_size: 8
+    batch_size: 6
     num_workers: 8
 
 pipeline:
@@ -71,12 +71,12 @@ pipeline:
         grad_norm_clip: -1.0
         ckpt_interval: 5
         eval_interval: 5
-        epoch: 40
+        epoch: 5
 
     Optim:
         scheduler_kwargs:
             epoch0: 0
-            epoch1: 40
+            epoch1: 5
             lr0: 1.e-3
             lr1: 1.e-6
 
