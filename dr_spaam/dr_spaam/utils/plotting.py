@@ -133,7 +133,7 @@ def _create_figure(title, xlim, ylim):
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     ax.set_aspect("equal")
-    ax.set_title(f"{title}")
+    ax.set_title("{}".format(title))
 
     return fig, ax
 
