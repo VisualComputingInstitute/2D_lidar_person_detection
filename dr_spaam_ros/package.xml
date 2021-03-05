@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package>
   <name>dr_spaam_ros</name>
-  <version>1.0.0</version>
-  <description>ROS interface for DR-SPAAM detector</description>
+  <version>0.1.0</version>
+  <description>SAGA Robotics fork of ROS interface for DR-SPAAM detector</description>
 
-  <maintainer email="jia@vision.rwth-aachen.de">Dan Jia</maintainer>
+  <maintainer email="rishabh.madan@sagarobotics.com">rishabh</maintainer>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
