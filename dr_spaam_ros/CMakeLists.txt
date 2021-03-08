@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
+
 project(dr_spaam_ros)
 
 find_package(catkin REQUIRED
@@ -21,8 +22,9 @@ add_custom_command(OUTPUT "${MODELS_DEST_DIR}/${MODELS_FILE}"
   VERBATIM
 )
 
-add_custom_target(zoo ALL
-    COMMAND echo "Dummy dependency for installation"
+
+add_custom_target(dr_spaam ALL
+    COMMAND pip install -e "${CMAKE_CURRENT_SOURCE_DIR}/dr_spaam/."
     DEPENDS "${MODELS_DEST_DIR}/${MODELS_FILE}"
     VERBATIM
 )
@@ -32,4 +34,7 @@ add_custom_target(get_models ALL
   "${MODELS_DEST_DIR}/${MODELS_FILE}"
 )
 
-add_dependencies(get_models zoo)
+add_dependencies(get_models dr_spaam)
+
+find_package(PythonInterp 3)
+find_package(PythonLibs 3)
