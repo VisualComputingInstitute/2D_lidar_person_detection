@@ -6,6 +6,9 @@ find_package(catkin REQUIRED
   COMPONENTS
 )
 
+find_package(PythonInterp 3)
+find_package(PythonLibs 3)
+
 catkin_package(
   CATKIN_DEPENDS
 )
@@ -36,5 +39,25 @@ add_custom_target(get_models ALL
 
 add_dependencies(get_models dr_spaam)
 
-find_package(PythonInterp 3)
-find_package(PythonLibs 3)
+# INSTALL
+
+install(PROGRAMS scripts/node.py
+  scripts/drow_data_converter.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(PROGRAMS src/dr_spaam_ros/dr_spaam_ros.py
+  DESTINATION "${CATKIN_PACKAGE_BIN_DESTINATION}/dr_spaam_ros"
+)
+
+install(DIRECTORY dr_spaam
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(DIRECTORY config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
