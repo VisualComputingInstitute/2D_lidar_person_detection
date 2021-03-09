@@ -6,7 +6,6 @@ opencv_python==4.5.1.48
 python_lzf==0.2.4
 matplotlib==3.2.2
 lzf==0.1
-mayavi==4.7.2
 PyYAML==5.4.1
 scikit_learn==0.24.1
 tensorboardX==2.1

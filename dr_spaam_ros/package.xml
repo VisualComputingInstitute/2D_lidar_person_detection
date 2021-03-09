@@ -12,7 +12,9 @@
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+
   <run_depend>rospy</run_depend>
+  <run_depend>python-rospkg</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
 </package>

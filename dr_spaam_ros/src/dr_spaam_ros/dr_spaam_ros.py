@@ -1,14 +1,19 @@
  #!/usr/bin/env python3
 
-# import time
 import numpy as np
 import rospy
+import rospkg
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point, Pose, PoseArray
 from visualization_msgs.msg import Marker
 
-from dr_spaam.detector import Detector
+r = rospkg.RosPack()
+try:
+    import dr_spaam
+    from dr_spaam.detector import Detector
+except ModuleNotFoundError:
+    raise SystemExit("[ERROR]: dr_spaam is not installed. Try installing it using \"pip install -e {}/dr_spaam/.\"".format(r.get_path('dr_spaam_ros')))
 
 
 class DrSpaamROS:
