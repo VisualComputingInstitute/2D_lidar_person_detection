@@ -13,7 +13,7 @@ catkin_package(
 catkin_python_setup()
 
 set(MODELS_FILE best_ckpt.pth)
-set(MODELS_DEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/model_ckpt/")
+set(MODELS_DEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dr_spaam/model_ckpt/")
 set(MODELS_DOWNLOAD_URL https://www.dropbox.com/s/v1ec37xctih9p7c/best_ckpt.pth?dl=0)
 
 add_custom_command(OUTPUT "${MODELS_DEST_DIR}/${MODELS_FILE}"
