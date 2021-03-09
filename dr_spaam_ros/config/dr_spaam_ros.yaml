@@ -1,4 +1,4 @@
-weight_file: "../ckpts/best_ckpt.pth"
+weight_file: "model_ckpt/best_ckpt.pth"
 detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
 conf_thresh: 0.95
 stride: 2  # use this to skip laser points
