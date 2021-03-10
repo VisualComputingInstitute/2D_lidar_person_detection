@@ -25,13 +25,6 @@ add_custom_command(OUTPUT "${MODELS_DEST_DIR}/${MODELS_FILE}"
   VERBATIM
 )
 
-add_custom_target(dr_spaam ALL
-    COMMAND pip install -e "${CMAKE_CURRENT_SOURCE_DIR}/dr_spaam/." --user
-    COMMAND pip install -r "${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt" --user
-    DEPENDS "${MODELS_DEST_DIR}/${MODELS_FILE}"
-    VERBATIM
-)
-
 add_custom_target(get_models ALL
   DEPENDS 
   "${MODELS_DEST_DIR}/${MODELS_FILE}"
@@ -40,10 +33,6 @@ add_custom_target(get_models ALL
 add_dependencies(get_models dr_spaam)
 
 # INSTALL
-
-install(FILES requirements.txt
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
 
 install(PROGRAMS scripts/node.py
   scripts/drow_data_converter.py
