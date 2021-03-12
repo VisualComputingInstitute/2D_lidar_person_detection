@@ -6,9 +6,6 @@ find_package(catkin REQUIRED
   COMPONENTS
 )
 
-find_package(PythonInterp 3)
-find_package(PythonLibs 3)
-
 catkin_package(
   CATKIN_DEPENDS
 )
@@ -30,7 +27,13 @@ add_custom_target(get_models ALL
   "${MODELS_DEST_DIR}/${MODELS_FILE}"
 )
 
-add_dependencies(get_models dr_spaam)
+add_custom_target(dr_spaam_model ALL
+    COMMAND echo "dependency for installation"
+    DEPENDS "${MODELS_DEST_DIR}/${MODELS_FILE}"
+    VERBATIM
+)
+
+add_dependencies(get_models dr_spaam_model)
 
 # INSTALL
 
