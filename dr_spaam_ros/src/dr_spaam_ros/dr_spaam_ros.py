@@ -3,6 +3,7 @@
 import numpy as np
 import rospy
 import rospkg
+import torch
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point, Pose, PoseArray
@@ -24,7 +25,7 @@ class DrSpaamROS:
         self._detector = Detector(
             self.weight_file,
             model=self.detector_model,
-            gpu=True,
+            gpu=torch.cuda.is_available(),
             stride=self.stride,
             panoramic_scan=self.panoramic_scan,
         )

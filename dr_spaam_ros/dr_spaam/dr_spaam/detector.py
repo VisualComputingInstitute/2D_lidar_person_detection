@@ -22,6 +22,11 @@ class Detector(object):
             panoramic_scan (bool): True if the scan covers 360 degree.
         """
         self._gpu = gpu
+        if gpu:
+            device = 'gpu'
+        else:
+            device = 'cpu'
+        self.device = torch.device(device)
         self._stride = stride
         self._use_dr_spaam = model == "DR-SPAAM"
 
@@ -54,7 +59,7 @@ class Detector(object):
         dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
         ckpt_file_abs = os.path.join(dir_path, ckpt_file)
         ckpt = torch.load(ckpt_file_abs)
-        self._model.load_state_dict(ckpt["model_state"])
+        self._model.load_state_dict(ckpt["model_state"], map_location=self.device)
 
         self._model.eval()
         if gpu:
