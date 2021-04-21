@@ -137,12 +137,12 @@ and PyTorch 1.6 and L4T 4.4 on Jetson AGX Xavier.
 ## Citation
 If you use this repo in your project, please cite:
 ```BibTeX
-@article{Jia2020Person2DRange,
+@article{Jia2021Person2DRange,
   title        = {{Self-Supervised Person Detection in 2D Range Data using a
                    Calibrated Camera}},
   author       = {Dan Jia and Mats Steinweg and Alexander Hermans and Bastian Leibe},
-  journal      = {https://arxiv.org/abs/2012.08890},
-  year         = {2020}
+  booktitle    = {International Conference on Robotics and Automation (ICRA)},
+  year         = {2021}
 }
 
 @inproceedings{Jia2020DRSPAAM,
