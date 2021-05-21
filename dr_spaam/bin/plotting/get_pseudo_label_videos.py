@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import torch
 
-from dr_spaam.dataset.get_dataloader import get_dataloader
+from dr_spaam.dataset import get_dataloader
 import dr_spaam.utils.jrdb_transforms as jt
 import dr_spaam.utils.utils as u
 
@@ -18,8 +18,9 @@ _X_LIM = (-15, 15)
 # _Y_LIM = (-10, 4)
 _Y_LIM = (-7, 7)
 
-_PLOTTING_INTERVAL = 2
+_PLOTTING_INTERVAL = 20
 _MAX_COUNT = 1e9
+# _MAX_COUNT = 1e1
 
 # _COLOR_CLOSE_HSV = (1.0, 0.59, 0.75)
 _COLOR_CLOSE_HSV = (0.0, 1.0, 1.0)
@@ -125,7 +126,7 @@ def _plot_frame_im(batch_dict, ib):
     plt.close(fig)
 
 
-def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg):
+def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p):
     frame_id = f"{batch_dict['frame_id'][ib]:06d}"
     sequence = batch_dict["sequence"][ib]
 
@@ -159,17 +160,44 @@ def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg):
                 )
                 ax.add_artist(c)
 
-    # inference result or pseudo-labels
+    # plot detections
     if pred_cls is not None and pred_reg is not None:
         dets_xy, dets_cls, _ = u.nms_predicted_center(
             scan_r, scan_phi, pred_cls[ib].reshape(-1), pred_reg[ib]
         )
-        dets_xy = dets_xy[dets_cls > 0.15]
+        dets_xy = dets_xy[dets_cls >= 0.9438938]  # at EER
         if len(dets_xy) > 0:
             for x, y in dets_xy:
-                c = plt.Circle((x, y), radius=0.4, color=(0.0, 0.56, 0.56), fill=False)
+                c = plt.Circle((x, y), radius=0.4, color=(0, 0.56, 0.56), fill=False)
                 ax.add_artist(c)
-        fig_file = os.path.join(_SAVE_DIR, f"figs/{sequence}/scan_det_{frame_id}.png")
+        fig_file = os.path.join(
+            _SAVE_DIR, f"figs/{sequence}/scan_det_{frame_id}.png"
+        )
+
+        # plot in addition detections from a pre-trained
+        if pred_cls_p is not None and pred_reg_p is not None:
+            dets_xy, dets_cls, _ = u.nms_predicted_center(
+                scan_r, scan_phi, pred_cls_p[ib].reshape(-1), pred_reg_p[ib]
+            )
+            dets_xy = dets_xy[dets_cls > 0.29919282]  # at EER
+            if len(dets_xy) > 0:
+                for x, y in dets_xy:
+                    c = plt.Circle((x, y), radius=0.4, color="green", fill=False)
+                    ax.add_artist(c)
+    # plot pre-trained detections only
+    elif pred_cls_p is not None and pred_reg_p is not None:
+        dets_xy, dets_cls, _ = u.nms_predicted_center(
+            scan_r, scan_phi, pred_cls_p[ib].reshape(-1), pred_reg_p[ib]
+        )
+        dets_xy = dets_xy[dets_cls > 0.29919282]  # at EER
+        if len(dets_xy) > 0:
+            for x, y in dets_xy:
+                c = plt.Circle((x, y), radius=0.4, color="green", fill=False)
+                ax.add_artist(c)
+        fig_file = os.path.join(
+            _SAVE_DIR, f"figs/{sequence}/scan_pretrain_{frame_id}.png"
+        )
+    # plot pseudo-labels only
     else:
         pl_xy = batch_dict["pseudo_label_loc_xy"][ib]
         if len(pl_xy) > 0:
@@ -185,7 +213,7 @@ def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg):
 
 
 def plot_pseudo_label_for_all_frames():
-    with open("./base_drow_jrdb_cfg.yaml", "r") as f:
+    with open("./cfgs/base_drow_jrdb_cfg.yaml", "r") as f:
         cfg = yaml.safe_load(f)
     cfg["dataset"]["pseudo_label"] = True
     cfg["dataset"]["pl_correction_level"] = 0
@@ -203,7 +231,12 @@ def plot_pseudo_label_for_all_frames():
     model.eval()
 
     logger = Logger(cfg["pipeline"]["Logger"])
-    logger.load_ckpt("./ckpts/ckpt_phce_drow_e40.pth", model)
+    logger.load_ckpt("./ckpts/ckpt_jrdb_pl_drow3_phce_e40.pth", model)
+
+    model_pretrain = get_model(cfg["model"])
+    model_pretrain.cuda()
+    model_pretrain.eval()
+    logger.load_ckpt("./ckpts/ckpt_drow_drow3_e40.pth", model_pretrain)
 
     # generate pseudo labels for all sample
     for count, batch_dict in enumerate(tqdm(test_loader)):
@@ -216,11 +249,19 @@ def plot_pseudo_label_for_all_frames():
             pred_cls = torch.sigmoid(pred_cls).data.cpu().numpy()
             pred_reg = pred_reg.data.cpu().numpy()
 
+            pred_cls_p, pred_reg_p = model_pretrain(net_input)
+            pred_cls_p = torch.sigmoid(pred_cls_p).data.cpu().numpy()
+            pred_reg_p = pred_reg_p.data.cpu().numpy()
+
         if count % _PLOTTING_INTERVAL == 0:
             for ib in range(len(batch_dict["input"])):
                 _plot_frame_im(batch_dict, ib)
-                _plot_frame_pts(batch_dict, ib, None, None)
-                _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg)
+                # _plot_frame_pts(batch_dict, ib, None, None, None, None)
+                # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
+                # # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p)
+
+                _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
+                _plot_frame_pts(batch_dict, ib, None, None, pred_cls_p, pred_reg_p)
 
 
 def plot_color_bar():
