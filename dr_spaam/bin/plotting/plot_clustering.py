@@ -169,19 +169,6 @@ def _plot_pseudo_labels(batch_dict, ib):
     p_xy = p_xy[:, ib_mask]
     c_bgr = _distance_to_bgr_color(scan_r[ib_mask])
 
-    # far_v = 1.0
-    # far_s = 0
-    # close_v = 0.75
-    # close_s = 0.59
-    # dist_normalized = np.clip(scan_r[ib_mask], 0.0, 20.0) / 20.0
-
-    # c_hsv = np.empty((1, p_xy.shape[1], 3), dtype=np.float32)
-    # c_hsv[0, :, 0] = 0.0
-    # # c_hsv[0, :, 1] = 1.0 - np.clip(scan_r[ib_mask], 0.0, 20.0) / 20.0
-    # c_hsv[0, :, 1] = close_s * (1.0 - dist_normalized) + far_s * dist_normalized
-    # c_hsv[0, :, 2] = close_v * (1.0 - dist_normalized) + far_v * dist_normalized
-    # c_bgr = cv2.cvtColor(c_hsv, cv2.COLOR_HSV2RGB)[0]
-
     # plot
     frame_id = f"{batch_dict['frame_id'][ib]:06d}"
     sequence = batch_dict["sequence"][ib]
@@ -262,6 +249,152 @@ def _plot_pseudo_labels(batch_dict, ib):
         )
         fig.savefig(fig_file)
         plt.close(fig)
+
+        # # --------
+        # # This block plots 3d figure of points and camera frustum, very slow
+
+        # # plot a camera frustum, use pixel coordinates, assuming the camera
+        # # is located at the box center
+        # fig = plt.figure(figsize=(10, 10))
+        # ax = fig.add_subplot(111, projection="3d")
+
+        # # put cam at box center
+        # cam_x = 0.5 * im_box.shape[1]
+        # cam_y = 0.5 * im_box.shape[0]
+        # cam_z = 0.0
+
+        # # image
+        # im_z = 300  # image plane
+        # im_xs, im_ys = np.meshgrid(
+        #     np.arange(im_box.shape[1]), np.arange(im_box.shape[0])
+        # )
+        # im_zs = im_z * np.ones_like(im_xs)
+        # im_xs -= int(cam_x)  # put camera center at (0, 0, 0)
+        # im_ys -= int(cam_y)
+        # im_zs -= int(cam_z)
+        # ax.plot_surface(
+        #     im_xs,
+        #     im_ys,
+        #     im_zs,
+        #     rstride=1,
+        #     cstride=1,
+        #     facecolors=im_box / 255.0,
+        #     shade=False,
+        # )
+
+        # # frustum
+        # ax.plot(
+        #     (0, im_xs.min()),
+        #     (0, im_ys.min()),
+        #     (0, im_zs.min()),
+        #     color="black",
+        #     linewidth=1.0,
+        # )
+        # ax.plot(
+        #     (0, im_xs.max()),
+        #     (0, im_ys.min()),
+        #     (0, im_zs.min()),
+        #     color="black",
+        #     linewidth=1.0,
+        # )
+        # ax.plot(
+        #     (0, im_xs.min()),
+        #     (0, im_ys.max()),
+        #     (0, im_zs.min()),
+        #     color="black",
+        #     linewidth=1.0,
+        # )
+        # ax.plot(
+        #     (0, im_xs.max()),
+        #     (0, im_ys.max()),
+        #     (0, im_zs.min()),
+        #     color="black",
+        #     linewidth=1.0,
+        # )
+
+        # # lidar points
+        # l_x = p_xy[0, in_box_mask] - x0 - cam_x
+        # l_y = p_xy[1, in_box_mask] - y0 - cam_y
+        # l_z = np.ones_like(l_x) * im_z - cam_z
+        # l_r = scan_r[ib_mask][in_box_mask]
+        # # for ease of viz compress z component
+        # l_r = l_r / 2
+        # cutoff = 7
+        # l_r_compressed = l_r.copy()
+        # l_r_compressed[l_r > cutoff] = (l_r[l_r > cutoff] - cutoff) / 4 + cutoff
+
+        # # pop up to 3d, not exactly correct, but for viz is sufficient
+        # l_x = l_x * l_r
+        # l_y = 60 * np.ones_like(l_x)
+        # l_z = l_z * l_r_compressed
+
+        # ax.scatter3D(l_x, l_y, l_z, color="red", s=10)
+
+        # # # plot k-means results, from utils.py generate_pseudo_labels
+        # # # do a k-means clustering on r space, with k=2, to seperate close and far points
+        # # laser_r_inside = scan_r[ib_mask][in_box_mask]
+        # # c0, c1 = np.min(laser_r_inside), np.max(laser_r_inside)
+        # # prev_c0, prev_c1 = 1e6, 1e6
+        # # converge_thresh = 0.1
+        # # iter_count, max_iter = 0, 1000
+        # # while iter_count < max_iter and (
+        # #     np.abs(c0 - prev_c0) > converge_thresh
+        # #     or np.abs(c1 - prev_c1) > converge_thresh
+        # # ):
+        # #     c0_mask = np.abs(laser_r_inside - c0) < np.abs(laser_r_inside - c1)
+        # #     prev_c0 = c0
+        # #     prev_c1 = c1
+        # #     c0 = np.mean(laser_r_inside[c0_mask])
+        # #     c1 = np.mean(laser_r_inside[np.logical_not(c0_mask)])
+
+        # # assert iter_count < max_iter
+
+        # # ax.scatter3D(l_x[c0_mask], l_y[c0_mask], l_z[c0_mask], color="green", s=10)
+        # # c1_mask = np.logical_not(c0_mask)
+        # # ax.scatter3D(l_x[c1_mask], l_y[c1_mask], l_z[c1_mask], color="blue", s=10)
+
+        # # Hack to get equal aspect ratio https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to  # noqa
+        # # Create cubic bounding box to simulate equal aspect ratio
+        # max_range = np.array(
+        #     [l_x.max() - l_x.min(), l_y.max() - l_y.min(), l_z.max() - 0]
+        # ).max()
+        # Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (
+        #     l_x.max() + l_x.min()
+        # )
+        # Yb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][1].flatten() + 0.5 * (
+        #     im_ys.max() + im_ys.min()
+        # )
+        # Zb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][2].flatten() + 0.5 * (
+        #     l_z.max() + 0
+        # )
+        # # Comment or uncomment following both lines to test the fake bounding box:
+        # for xbb, ybb, zbb in zip(Xb, Yb, Zb):
+        #     ax.plot([xbb], [ybb], [zbb], "w")
+
+        # ax.grid(False)
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # ax.set_zticks([])
+        # ax.view_init(elev=-30, azim=-90)
+
+        # # https://stackoverflow.com/questions/11448972/changing-the-background-color-of-the-axes-planes-of-a-matplotlib-3d-plot  # noqa
+        # ax.xaxis.pane.fill = False
+        # ax.yaxis.pane.fill = False
+        # ax.zaxis.pane.fill = False
+
+        # # Now set color to white (or whatever is "invisible")
+        # ax.xaxis.pane.set_edgecolor("w")
+        # ax.yaxis.pane.set_edgecolor("w")
+        # ax.zaxis.pane.set_edgecolor("w")
+
+        # fig_file = os.path.join(
+        #     _SAVE_DIR, f"samples/{sequence}/{pos_neg_dir}/{frame_id}_{count}_viz.pdf"
+        # )
+        # plt.savefig(fig_file)
+        # plt.close(fig)
+
+        # return
+        # # --------
 
 
 def _get_bounding_box_plotting_vertices(x0, y0, x1, y1):

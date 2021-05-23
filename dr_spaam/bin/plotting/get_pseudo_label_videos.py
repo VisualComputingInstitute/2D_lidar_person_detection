@@ -14,13 +14,18 @@ import dr_spaam.utils.utils as u
 from dr_spaam.pipeline.logger import Logger
 from dr_spaam.model.get_model import get_model
 
+# for _PLOTTING_INTERVAL = 2
+# 000579 = 14s
+# ffmpeg -r 20 -pattern_type glob -i 'packard-poster-session-2019-03-20_1/scan_pl_*.png' -c:v libx264 -vf fps=30 -pix_fmt yuv420p out_pl.mp4  
+
 _X_LIM = (-15, 15)
 # _Y_LIM = (-10, 4)
 _Y_LIM = (-7, 7)
 
-_PLOTTING_INTERVAL = 20
+_PLOTTING_INTERVAL = 2
 _MAX_COUNT = 1e9
 # _MAX_COUNT = 1e1
+_SEQ_MAX_COUNT = 2000
 
 # _COLOR_CLOSE_HSV = (1.0, 0.59, 0.75)
 _COLOR_CLOSE_HSV = (0.0, 1.0, 1.0)
@@ -168,7 +173,7 @@ def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p):
         dets_xy = dets_xy[dets_cls >= 0.9438938]  # at EER
         if len(dets_xy) > 0:
             for x, y in dets_xy:
-                c = plt.Circle((x, y), radius=0.4, color=(0, 0.56, 0.56), fill=False)
+                c = plt.Circle((x, y), radius=0.4, color="green", fill=False)
                 ax.add_artist(c)
         fig_file = os.path.join(
             _SAVE_DIR, f"figs/{sequence}/scan_det_{frame_id}.png"
@@ -199,6 +204,9 @@ def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p):
         )
     # plot pseudo-labels only
     else:
+        pl_neg_mask = batch_dict["target_cls"][ib] == 0
+        ax.scatter(scan_x[pl_neg_mask], scan_y[pl_neg_mask], s=0.5, c="orange")
+
         pl_xy = batch_dict["pseudo_label_loc_xy"][ib]
         if len(pl_xy) > 0:
             for x, y in pl_xy:
@@ -239,7 +247,17 @@ def plot_pseudo_label_for_all_frames():
     logger.load_ckpt("./ckpts/ckpt_drow_drow3_e40.pth", model_pretrain)
 
     # generate pseudo labels for all sample
+    seq_count = 0
     for count, batch_dict in enumerate(tqdm(test_loader)):
+        if batch_dict["first_frame"][0]:
+            print(f"new seq, reset count, idx {count}")
+            seq_count = 0
+
+        if seq_count > _SEQ_MAX_COUNT:
+            continue
+        else:
+            seq_count += 1
+
         if count >= _MAX_COUNT:
             break
 
@@ -255,13 +273,14 @@ def plot_pseudo_label_for_all_frames():
 
         if count % _PLOTTING_INTERVAL == 0:
             for ib in range(len(batch_dict["input"])):
-                _plot_frame_im(batch_dict, ib)
-                # _plot_frame_pts(batch_dict, ib, None, None, None, None)
-                # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
-                # # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p)
+                # generate sequence videos
+                _plot_frame_im(batch_dict, ib)  # image
+                _plot_frame_pts(batch_dict, ib, None, None, None, None)  # pseudo-label # noqa
+                _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)  # detections # noqa
 
-                _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
-                _plot_frame_pts(batch_dict, ib, None, None, pred_cls_p, pred_reg_p)
+                # # use to generate comparsion between pre-trained and pseudo-label trained  # noqa
+                # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
+                # _plot_frame_pts(batch_dict, ib, None, None, pred_cls_p, pred_reg_p)
 
 
 def plot_color_bar():
