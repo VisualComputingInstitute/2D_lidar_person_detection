@@ -16,7 +16,7 @@ from dr_spaam.model.get_model import get_model
 
 # for _PLOTTING_INTERVAL = 2
 # 000579 = 14s
-# ffmpeg -r 20 -pattern_type glob -i 'packard-poster-session-2019-03-20_1/scan_pl_*.png' -c:v libx264 -vf fps=30 -pix_fmt yuv420p out_pl.mp4  
+# ffmpeg -r 20 -pattern_type glob -i 'packard-poster-session-2019-03-20_1/scan_pl_*.png' -c:v libx264 -vf fps=30 -pix_fmt yuv420p out_pl.mp4
 
 _X_LIM = (-15, 15)
 # _Y_LIM = (-10, 4)
@@ -58,7 +58,7 @@ def _distance_to_bgr_color(dist):
     return c_bgr[0]
 
 
-def _plot_frame_im(batch_dict, ib):
+def _plot_frame_im(batch_dict, ib, show_pseudo_labels=False):
     frame_id = f"{batch_dict['frame_id'][ib]:06d}"
     sequence = batch_dict["sequence"][ib]
 
@@ -88,44 +88,59 @@ def _plot_frame_im(batch_dict, ib):
     scan_xyz_laser = np.stack((scan_x, -scan_y, scan_z), axis=0)  # in JRDB laser frame
     p_xy, ib_mask = jt.transform_pts_laser_to_stitched_im(scan_xyz_laser)
 
-    # detection bounding box
-    for box_dict in batch_dict["im_dets"][ib]:
-        x0, y0, w, h = box_dict["box"]
-        x1 = x0 + w
-        y1 = y0 + h
-        verts = _get_bounding_box_plotting_vertices(x0, y0, x1, y1)
-        ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1], c=(0.0, 0.0, 1.0), alpha=0.3)
-        # c = max(float(box_dict["score"]) - 0.5, 0) * 2.0
-        # ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1], c=(1.0 - c, 1.0 - c, 1.0))
-        # ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1],
-        # c=(0.0, 0.0, 1.0), alpha=1.0)
+    if show_pseudo_labels:
+        # detection bounding box
+        for box_dict in batch_dict["im_dets"][ib]:
+            x0, y0, w, h = box_dict["box"]
+            x1 = x0 + w
+            y1 = y0 + h
+            verts = _get_bounding_box_plotting_vertices(x0, y0, x1, y1)
+            ax_im.plot(
+                verts[:, 0] - crop_min_x, verts[:, 1], c=(0.0, 0.0, 1.0), alpha=0.3
+            )
+            # c = max(float(box_dict["score"]) - 0.5, 0) * 2.0
+            # ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1], c=(1.0 - c, 1.0 - c, 1.0))
+            # ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1],
+            # c=(0.0, 0.0, 1.0), alpha=1.0)
 
-        # x1_large = x1 + 0.05 * w
-        # x0_large = x0 - 0.05 * w
-        # y1_large = y1 + 0.05 * w
-        # y0_large = y0 - 0.05 * w
-        # in_box_mask = np.logical_and(
-        #     np.logical_and(p_xy[0] > x0_large, p_xy[0] < x1_large),
-        #     np.logical_and(p_xy[1] > y0_large, p_xy[1] < y1_large)
-        # )
-        # neg_mask[in_box_mask] = False
+            # x1_large = x1 + 0.05 * w
+            # x0_large = x0 - 0.05 * w
+            # y1_large = y1 + 0.05 * w
+            # y0_large = y0 - 0.05 * w
+            # in_box_mask = np.logical_and(
+            #     np.logical_and(p_xy[0] > x0_large, p_xy[0] < x1_large),
+            #     np.logical_and(p_xy[1] > y0_large, p_xy[1] < y1_large)
+            # )
+            # neg_mask[in_box_mask] = False
 
-    for box in batch_dict["pseudo_label_boxes"][ib]:
-        x0, y0, x1, y1 = box
-        verts = _get_bounding_box_plotting_vertices(x0, y0, x1, y1)
-        ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1], c="green")
+        for box in batch_dict["pseudo_label_boxes"][ib]:
+            x0, y0, x1, y1 = box
+            verts = _get_bounding_box_plotting_vertices(x0, y0, x1, y1)
+            ax_im.plot(verts[:, 0] - crop_min_x, verts[:, 1], c="green")
 
-    # overlay laser points on image
-    c_bgr = _distance_to_bgr_color(scan_r)
-    ax_im.scatter(
-        p_xy[0, ib_mask] - crop_min_x, p_xy[1, ib_mask], s=1, color=c_bgr[ib_mask]
-    )
-    # neg_mask = np.ones(p_xy.shape[1], dtype=np.bool)
-    # ax_im.scatter(p_xy[0, neg_mask] - crop_min_x, p_xy[1, neg_mask], s=1,
-    # color=c_bgr[neg_mask])
+        # overlay only pseudo-label laser points on image
+        pl_pos_mask = np.logical_and(batch_dict["target_cls"][ib] == 1, ib_mask)
+        pl_neg_mask = np.logical_and(batch_dict["target_cls"][ib] == 0, ib_mask)
+        ax_im.scatter(
+            p_xy[0, pl_pos_mask] - crop_min_x, p_xy[1, pl_pos_mask], s=1, color="green",
+        )
+        ax_im.scatter(
+            p_xy[0, pl_neg_mask] - crop_min_x,
+            p_xy[1, pl_neg_mask],
+            s=1,
+            color="orange",
+        )
+
+        fig_file = os.path.join(_SAVE_DIR, f"figs/{sequence}/im_pl_{frame_id}.png")
+    else:
+        # overlay all laser points on image
+        c_bgr = _distance_to_bgr_color(scan_r)
+        ax_im.scatter(
+            p_xy[0, ib_mask] - crop_min_x, p_xy[1, ib_mask], s=1, color=c_bgr[ib_mask]
+        )
+        fig_file = os.path.join(_SAVE_DIR, f"figs/{sequence}/im_raw_{frame_id}.png")
 
     # save fig
-    fig_file = os.path.join(_SAVE_DIR, f"figs/{sequence}/im_{frame_id}.png")
     os.makedirs(os.path.dirname(fig_file), exist_ok=True)
     fig.savefig(fig_file, dpi=dpi)
     plt.close(fig)
@@ -175,9 +190,7 @@ def _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, pred_cls_p, pred_reg_p):
             for x, y in dets_xy:
                 c = plt.Circle((x, y), radius=0.4, color="green", fill=False)
                 ax.add_artist(c)
-        fig_file = os.path.join(
-            _SAVE_DIR, f"figs/{sequence}/scan_det_{frame_id}.png"
-        )
+        fig_file = os.path.join(_SAVE_DIR, f"figs/{sequence}/scan_det_{frame_id}.png")
 
         # plot in addition detections from a pre-trained
         if pred_cls_p is not None and pred_reg_p is not None:
@@ -274,9 +287,14 @@ def plot_pseudo_label_for_all_frames():
         if count % _PLOTTING_INTERVAL == 0:
             for ib in range(len(batch_dict["input"])):
                 # generate sequence videos
-                _plot_frame_im(batch_dict, ib)  # image
-                _plot_frame_pts(batch_dict, ib, None, None, None, None)  # pseudo-label # noqa
-                _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)  # detections # noqa
+                _plot_frame_im(batch_dict, ib, False)  # image
+                _plot_frame_im(batch_dict, ib, True)  # image
+                _plot_frame_pts(
+                    batch_dict, ib, None, None, None, None
+                )  # pseudo-label
+                _plot_frame_pts(
+                    batch_dict, ib, pred_cls, pred_reg, None, None
+                )  # detections
 
                 # # use to generate comparsion between pre-trained and pseudo-label trained  # noqa
                 # _plot_frame_pts(batch_dict, ib, pred_cls, pred_reg, None, None)
