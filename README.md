@@ -1,9 +1,13 @@
 # Person Detection in 2D Range Data
-This repository implements DROW3 [(arXiv)](https://arxiv.org/abs/1804.02463) and DR-SPAAM [(arXiv)](https://arxiv.org/abs/2004.14079), real-time person detectors using 2D LiDARs mounted at ankle or knee height.
-Also included are experiments from *Self-Supervised Person Detection in 2D Range Data using a Calibrated Camera* [(arXiv)](https://arxiv.org/abs/2012.08890).
+This repository implements DROW3 ([arXiv](https://arxiv.org/abs/1804.02463)) and DR-SPAAM ([arXiv](https://arxiv.org/abs/2004.14079)), real-time person detectors using 2D LiDARs mounted at ankle or knee height.
+Also included are experiments from *Self-Supervised Person Detection in 2D Range Data using a Calibrated Camera* ([arXiv](https://arxiv.org/abs/2012.08890)).
 Pre-trained models (using PyTorch 1.6) can be found in this [Google drive](https://drive.google.com/drive/folders/1Wl2nC8lJ6s9NI1xtWwmxeAUnuxDiiM4W?usp=sharing).
 
 ![](imgs/teaser_1.gif)
+
+## News
+
+[06-03-2021] Our work has been accepted to ICRA'21. Checkout the presentation video [here](https://www.youtube.com/watch?v=f5U1ZfqXtc0).
 
 ## Quick start
 
@@ -114,7 +118,7 @@ If your robot has a calibrated camera (i.e. the transformation between the camer
 you can generate pseudo labels automatically during deployment and fine-tune the detector (no manual labeling needed).
 We provide a wrapper function `dr_spaam.pseudo_labels.get_regression_target_using_bounding_boxes()` for generating pseudo labels conveniently.
 For experiments using pseudo labels,
-checkout our paper *Self-Supervised Person Detection in 2D Range Data using a Calibrated Camera* [(arXiv)](https://arxiv.org/abs/2012.08890).
+checkout our paper *Self-Supervised Person Detection in 2D Range Data using a Calibrated Camera* ([arXiv](https://arxiv.org/abs/2012.08890)).
 Use checkpoints in this [Google drive](https://drive.google.com/drive/folders/1Wl2nC8lJ6s9NI1xtWwmxeAUnuxDiiM4W?usp=sharing) to reproduce our results.
 
 ## Inference time
