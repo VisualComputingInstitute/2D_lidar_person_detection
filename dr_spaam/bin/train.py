@@ -4,7 +4,7 @@ import torch
 
 from dr_spaam.dataset import get_dataloader
 from dr_spaam.pipeline.pipeline import Pipeline
-from dr_spaam.model import get_model
+from dr_spaam.model.get_model import get_model
 
 
 def run_training(model, pipeline, cfg):
