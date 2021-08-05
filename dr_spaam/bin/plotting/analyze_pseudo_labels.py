@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-from dr_spaam.dataset.get_dataloader import get_dataloader
+from dr_spaam.dataset import get_dataloader
 import dr_spaam.utils.jrdb_transforms as jt
 import dr_spaam.utils.precision_recall as pru
 import dr_spaam.utils.utils as u
@@ -254,7 +254,7 @@ def _write_file_make_dir(f_name, f_str):
 
 
 def generate_pseudo_labels():
-    with open("./base_dr_spaam_jrdb_cfg.yaml", "r") as f:
+    with open("./cfgs/base_dr_spaam_jrdb_cfg.yaml", "r") as f:
         cfg = yaml.safe_load(f)
     cfg["dataset"]["pseudo_label"] = True
     cfg["dataset"]["pl_correction_level"] = 0
