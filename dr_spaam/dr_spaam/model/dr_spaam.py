@@ -18,6 +18,7 @@ class DrSpaam(nn.Module):
         cls_loss=None,
         mixup_alpha=0.0,
         mixup_w=0.0,
+        use_box=False,
     ):
         super(DrSpaam, self).__init__()
 
@@ -44,6 +45,11 @@ class DrSpaam(nn.Module):
         # detection layer
         self.conv_cls = nn.Conv1d(128, 1, kernel_size=1)
         self.conv_reg = nn.Conv1d(128, 2, kernel_size=1)
+        self._use_box = use_box
+        if use_box:
+            self.conv_box = nn.Conv1d(
+                128, 4, kernel_size=1
+            )  # length, width, sin_rot, cos_rot
 
         # spatial attention
         self.gate = _SpatialAttentionMemory(
@@ -67,6 +73,10 @@ class DrSpaam(nn.Module):
             elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+
+    @property
+    def use_box(self):
+        return self._use_box
 
     def forward(self, x, inference=False):
         """
@@ -110,7 +120,11 @@ class DrSpaam(nn.Module):
         pred_cls = self.conv_cls(out).view(B, CT, -1)  # (B, CT, cls)
         pred_reg = self.conv_reg(out).view(B, CT, 2)  # (B, CT, 2)
 
-        return pred_cls, pred_reg, sim
+        if self._use_box:
+            pred_box = self.conv_box(out).view(B, CT, 4)
+            return pred_cls, pred_reg, pred_box, sim
+        else:
+            return pred_cls, pred_reg, sim
 
     def _conv_and_pool(self, x, conv_block):
         out = conv_block(x)
@@ -169,9 +183,11 @@ class _SpatialAttentionMemory(nn.Module):
             self._memory = x_new
             return self._memory, None
 
+        # ##########
         # NOTE: Ablation study, DR-AM, no spatial attention
         # self._memory = self._alpha * x_new + (1.0 - self._alpha) * self._memory
         # return self._memory, None
+        # ##########
 
         n_batch, n_cutout, n_channel, n_pts = x_new.shape
 
@@ -196,6 +212,7 @@ class _SpatialAttentionMemory(nn.Module):
         sim = torch.matmul(emb_x, emb_temp.permute(0, 2, 1))
 
         # masked softmax
+        # TODO replace with gather and scatter
         sim = sim - 1e10 * (
             1.0 - self.neighbor_masks
         )  # make sure the out-of-window elements have small values
@@ -203,6 +220,12 @@ class _SpatialAttentionMemory(nn.Module):
         exps = torch.exp(sim - maxes) * self.neighbor_masks
         exps_sum = exps.sum(dim=-1, keepdim=True)
         sim = exps / exps_sum
+
+        # # NOTE this gather scatter version is only marginally more efficient on memory
+        # sim_w = torch.gather(sim, 2, self.neighbor_inds.unsqueeze(dim=0))
+        # sim_w = sim_w.softmax(dim=2)
+        # sim = torch.zeros_like(sim)
+        # sim.scatter_(2, self.neighbor_inds.unsqueeze(dim=0), sim_w)
 
         # weighted average on the template
         atten_memory = self._memory.view(n_batch, n_cutout, n_channel * n_pts)
@@ -230,7 +253,6 @@ class _SpatialAttentionMemory(nn.Module):
         )
         inds_row = torch.arange(n_cutout).unsqueeze(dim=-1).expand_as(inds_col).long()
         inds_full = torch.stack((inds_row, inds_col), dim=2).view(-1, 2)
-        # self.register_buffer('neighbor_inds', inds_full)
 
         masks = torch.zeros(n_cutout, n_cutout).float()
         masks[inds_full[:, 0], inds_full[:, 1]] = 1.0
