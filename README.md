@@ -7,7 +7,7 @@ Pre-trained models (using PyTorch 1.6) can be found in this [Google drive](https
 
 ## News
 
-[06-03-2021] Our work has been accepted to ICRA'21! Checkout the presentation video [here](https://www.youtube.com/watch?v=f5U1ZfqXtc0).
+[06-03-2021] Our work has been accepted to ICRA'21! Checkout the presentation video [here](https://www.youtube.com/watch?v=f5U1ZfqXtc0).  
 [12-03-2026] [Nilum2002](https://github.com/nilum2002) did a ROS2 adaptation of the ROS node which can be found [here](https://github.com/nilum2002/2D_lidar_person_detection).
 
 ## Quick start
